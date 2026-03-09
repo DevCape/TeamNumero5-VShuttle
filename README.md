@@ -6,6 +6,7 @@ V-SHUTTLE HMI è un **Decision Support System** progettato per navette autonome 
 
 Il sistema è interamente client-side: tutta la logica gira nel browser, senza backend, senza database e senza chiamate a servizi esterni o LLM.
 
+E' possibile tuttavia accedere all'applicazione al seguente link: https://team-numero5-v-shuttle.vercel.app/
 ---
 
 ## 2. Stack Tecnologico
