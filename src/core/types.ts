@@ -70,6 +70,95 @@ export interface FusionResult {
   giornoSettimana: GiornoSettimana;
 }
 
+// ─── Tipi del Semantic Parser ────────────────
+
+/** Categoria del segnale stradale */
+export type SignCategory = "DIVIETO" | "OBBLIGO" | "PERICOLO" | "INFORMAZIONE";
+
+/** Sotto-tipo specifico del segnale */
+export type SignType =
+  | "TRANSITO"
+  | "ACCESSO"
+  | "SOSTA"
+  | "FERMATA"
+  | "ZTL"
+  | "OBBLIGO_SVOLTA"
+  | "LIMITE_VELOCITA"
+  | "SENSO_UNICO"
+  | "SENSO_VIETATO"
+  | "PERICOLO_GENERICO"
+  | "LAVORI"
+  | "AREA_PEDONALE"
+  | "STRADA_CHIUSA"
+  | "ROTATORIA"
+  | "INFORMATIVO"
+  | "NON_RILEVANTE";
+
+/** Eccezioni riconosciute nel testo del segnale */
+export type ExceptionType =
+  | "BUS"
+  | "BUS_TAXI"
+  | "NAVETTE_L4"
+  | "VEICOLI_ELETTRICI"
+  | "RESIDENTI"
+  | "MEZZI_SOCCORSO"
+  | "FORNITORI"
+  | "AUTORIZZATI"
+  | "MEZZI_PESANTI"
+  | "VEICOLI_MOTORE";
+
+/** Vincolo temporale estratto dal testo */
+export interface TimeConstraint {
+  startHour: number;
+  startMinute: number;
+  endHour: number;
+  endMinute: number;
+}
+
+/** Vincolo su giorno della settimana */
+export interface DayConstraint {
+  activeDays: GiornoSettimana[];
+}
+
+/** Risultato della classificazione del segnale (Logic Mapping) */
+export interface ParsedSign {
+  category: SignCategory;
+  signType: SignType;
+  exceptions: ExceptionType[];
+  timeConstraint: TimeConstraint | null;
+  dayConstraint: DayConstraint | null;
+  isExplicitlyInactive: boolean;
+  isAlwaysActive: boolean;
+  rawText: string;
+}
+
+/** Decisione finale del sistema per uno scenario */
+export type Decision = "PROCEDI" | "STOP" | "RALLENTA" | "INTERVENTO_UMANO";
+
+/** Risultato completo del Semantic Parser */
+export interface ParserResult {
+  scenarioId: number;
+  parsedSign: ParsedSign | null;
+  isVehicleExempt: boolean;
+  isTemporallyActive: boolean;
+  decision: Decision;
+  reason: string;
+}
+
+// ─── Caratteristiche del veicolo (navetta) ────────────────
+
+export const VEHICLE_PROPERTIES = {
+  isBus: true,
+  isTaxi: false,
+  isNavettaL4: true,
+  isElettrico: true,
+  isResidente: false,
+  isMezzoSoccorso: false,
+  isFornitore: false,
+  isAutorizzato: true,
+  isMezzoPesante: false,
+} as const;
+
 // ─── Soglie di sistema ────────────────
 
 export const CONFIDENCE_THRESHOLD = 0.60;
