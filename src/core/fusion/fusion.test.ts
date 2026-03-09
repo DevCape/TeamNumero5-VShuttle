@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { normalizeOcrText, normalizeSensorReading } from "./normalizer";
+import { normalizeOcrText } from "./normalizer";
 import { selectBestText, computeWeightedConfidence } from "./weightedFusion";
 import { assessConfidence } from "./confidenceScoring";
 import { processScenario } from "./index";

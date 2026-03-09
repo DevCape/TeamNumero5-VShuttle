@@ -132,7 +132,6 @@ const GIORNI_FERIALI: GiornoSettimana[] = [
   "Lunedì", "Martedì", "Mercoledì", "Giovedì", "Venerdì",
 ];
 const GIORNI_FESTIVI: GiornoSettimana[] = ["Sabato", "Domenica"];
-const TUTTI_I_GIORNI: GiornoSettimana[] = [...GIORNI_FERIALI, ...GIORNI_FESTIVI];
 
 const GIORNO_MAP: Record<string, GiornoSettimana> = {
   "LUNEDI": "Lunedì",

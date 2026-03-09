@@ -1,7 +1,9 @@
+import { Dashboard } from "./components/Dashboard";
+import scenariosData from "../data/VShuttle-input.json";
+import type { Scenario } from "./core/types";
+
+const scenarios = scenariosData as Scenario[];
+
 export default function App() {
-  return (
-    <div className="min-h-screen bg-gray-900 text-white flex items-center justify-center">
-      <h1 className="text-3xl font-bold">V-SHUTTLE HMI</h1>
-    </div>
-  );
+  return <Dashboard scenarios={scenarios} />;
 }

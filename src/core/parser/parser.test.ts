@@ -3,7 +3,7 @@ import { parseSign } from "./logicMapping";
 import { isVehicleExempt } from "./vehicleAwareness";
 import { isTemporallyActive } from "./temporalCheck";
 import { parseScenario } from "./index";
-import type { FusionResult, ParsedSign } from "../types";
+import type { FusionResult } from "../types";
 
 // ═══════════════════════════════════════════════
 // logicMapping – parseSign
