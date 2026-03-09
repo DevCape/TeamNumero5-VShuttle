@@ -131,18 +131,20 @@ function computeDecision(
 export function parseScenario(fusion: FusionResult): ParserResult {
   // Bassa confidenza → intervento umano
   if (fusion.requiresHumanIntervention) {
+    const conf = fusion.overallConfidence;
+    const confStr = conf != null && isFinite(conf) ? (conf * 100).toFixed(0) : "N/A";
     return {
       scenarioId: fusion.scenarioId,
       parsedSign: null,
       isVehicleExempt: false,
       isTemporallyActive: false,
       decision: "INTERVENTO_UMANO",
-      reason: `Confidenza insufficiente (${(fusion.overallConfidence * 100).toFixed(0)}%), richiesto intervento operatore`,
+      reason: `Confidenza insufficiente (${confStr}%), richiesto intervento operatore`,
     };
   }
 
-  // Nessun testo fuso disponibile
-  if (fusion.fusedText === null) {
+  // Nessun testo fuso disponibile o testo vuoto
+  if (fusion.fusedText == null || fusion.fusedText.trim() === "") {
     return {
       scenarioId: fusion.scenarioId,
       parsedSign: null,

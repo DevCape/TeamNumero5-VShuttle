@@ -86,8 +86,32 @@ export function useSimulation(scenarios: Scenario[]): UseSimulationReturn {
     }
 
     const scenario = scenarios[index]!;
-    const fusionResult = processScenario(scenario);
-    const parserResult = parseScenario(fusionResult);
+
+    let fusionResult: FusionResult;
+    let parserResult: ParserResult;
+    try {
+      fusionResult = processScenario(scenario);
+      parserResult = parseScenario(fusionResult);
+    } catch {
+      // Se il processing fallisce, imposta STOP di sicurezza e avanza
+      setState((prev) => ({
+        ...prev,
+        currentIndex: index,
+        scenario,
+        fusionResult: null,
+        parserResult: null,
+        finalDecision: "STOP",
+        isWaitingHuman: false,
+        humanTimerMs: 0,
+        reason: "Errore nell'elaborazione dello scenario, impostato STOP di sicurezza",
+        wasOverridden: false,
+        completedCount: prev.completedCount + 1,
+      }));
+      scenarioTimerRef.current = setTimeout(() => {
+        processAndShow(index + 1);
+      }, SCENARIO_INTERVAL_MS);
+      return;
+    }
 
     const needsHuman = parserResult.decision === "INTERVENTO_UMANO";
 
@@ -124,6 +148,7 @@ export function useSimulation(scenarios: Scenario[]): UseSimulationReturn {
             humanTimerMs: 0,
             reason: "Safety Fallback: tempo di override scaduto, impostato STOP automatico",
             wasOverridden: false,
+            completedCount: prev.completedCount + 1,
           }));
           // Avanza allo scenario successivo dopo un breve delay
           scenarioTimerRef.current = setTimeout(() => {

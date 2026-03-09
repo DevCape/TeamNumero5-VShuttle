@@ -50,18 +50,19 @@ function removeDotSeparators(text: string): string {
  * Preserva i numeri all'interno di pattern temporali (HH:MM, HH-MM)
  * e numeri che fanno parte di valori numerici reali (es. "30", "100M").
  */
+/** Token alfanumerici corti da preservare (sigle di dominio) */
+const PRESERVE_TOKENS = new Set(["L4"]);
+
 function deleetify(text: string): string {
-  // Protegge i pattern temporali e i numeri puri sostituendo il ':'
-  // con un placeholder prima del de-leet, poi li ripristina.
-  // Strategia: splitta per token e de-leeta solo quelli che sembrano parole.
+  // Strategia: splitta per token e de-leeta solo quelli che sembrano parole OCR corrotte.
   return text.replace(/\b[A-Z0-9]+\b/g, (token) => {
     // Se contiene ':' (orario) → non toccare
     if (token.includes(":")) return token;
     // Se è un numero puro (es. "30", "100") → non toccare
     if (/^\d+$/.test(token)) return token;
-    // Se è un pattern orario abbreviato come "08" → non toccare
-    // (i numeri puri sono già gestiti sopra)
-    // Altrimenti de-leeta i caratteri
+    // Se è un token di dominio noto (es. "L4" per navette L4) → non toccare
+    if (PRESERVE_TOKENS.has(token)) return token;
+    // Altrimenti de-leeta i caratteri (per token come "D1V1ET0", "D1", "ACCE550")
     let result = "";
     for (const char of token) {
       result += LEET_MAP[char] ?? char;
@@ -99,8 +100,8 @@ function collapseSpaces(text: string): string {
  * 5. Normalizzazione fasce orarie
  * 6. Collasso spazi
  */
-export function normalizeOcrText(raw: string | null): string | null {
-  if (raw === null || raw.trim() === "") {
+export function normalizeOcrText(raw: string | null | undefined): string | null {
+  if (raw == null || raw.trim() === "") {
     return null;
   }
 
@@ -119,12 +120,20 @@ export function normalizeOcrText(raw: string | null): string | null {
  */
 export function normalizeSensorReading(
   sensorId: SensorId,
-  reading: SensorReading,
+  reading: SensorReading | null | undefined,
 ): NormalizedReading {
+  if (reading == null) {
+    return {
+      sensorId,
+      originalText: null,
+      normalizedText: null,
+      confidence: null,
+    };
+  }
   return {
     sensorId,
-    originalText: reading.testo,
+    originalText: reading.testo ?? null,
     normalizedText: normalizeOcrText(reading.testo),
-    confidence: reading.confidenza,
+    confidence: reading.confidenza ?? null,
   };
 }

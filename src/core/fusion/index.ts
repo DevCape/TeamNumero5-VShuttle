@@ -28,9 +28,10 @@ export function processScenario(
   scenario: Scenario,
   weights: SensorWeights = DEFAULT_WEIGHTS,
 ): FusionResult {
-  // 1. Normalizza le letture di tutti i sensori
+  // 1. Normalizza le letture di tutti i sensori (con difesa da campi mancanti)
+  const sensori = scenario.sensori;
   const normalizedReadings: NormalizedReading[] = SENSOR_IDS.map((id) =>
-    normalizeSensorReading(id, scenario.sensori[id]),
+    normalizeSensorReading(id, sensori?.[id]),
   );
 
   // 2. Selezione testo fuso migliore

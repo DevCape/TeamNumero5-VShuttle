@@ -9,10 +9,19 @@ function timeToMinutes(hour: number, minute: number): number {
 
 /**
  * Parsa l'orario di rilevamento "HH:MM" in ore e minuti.
+ * Gestisce formati malformati restituendo valori di default sicuri.
  */
 function parseOrario(orario: string): { hour: number; minute: number } {
-  const [h, m] = orario.split(":");
-  return { hour: parseInt(h!, 10), minute: parseInt(m!, 10) };
+  if (orario == null || typeof orario !== "string") {
+    return { hour: 12, minute: 0 }; // Default: mezzogiorno (safety fallback)
+  }
+  const parts = orario.split(":");
+  const h = parseInt(parts[0] ?? "", 10);
+  const m = parseInt(parts[1] ?? "0", 10);
+  // Se il parsing fallisce (NaN) o produce valori fuori range, usa default sicuri
+  const hour = isNaN(h) || h < 0 || h > 23 ? 12 : h;
+  const minute = isNaN(m) || m < 0 || m > 59 ? 0 : m;
+  return { hour, minute };
 }
 
 /**
@@ -39,6 +48,14 @@ function isTimeInRange(
     // Fascia notturna che attraversa la mezzanotte (es. 22:00-06:00)
     return current >= start || current < end;
   }
+}
+
+/**
+ * Normalizza un nome di giorno rimuovendo accenti e convertendo in lowercase
+ * per confronti robusti.
+ */
+function normalizeDay(day: string): string {
+  return day.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
 }
 
 /**
@@ -83,9 +100,12 @@ export function isTemporallyActive(
     );
   }
 
-  // Controlla vincolo giornaliero
+  // Controlla vincolo giornaliero (confronto robusto: accent/case insensitive)
   if (sign.dayConstraint) {
-    dayActive = sign.dayConstraint.activeDays.includes(giorno);
+    const normalizedGiorno = normalizeDay(giorno);
+    dayActive = sign.dayConstraint.activeDays.some(
+      (d) => normalizeDay(d) === normalizedGiorno,
+    );
   }
 
   return timeActive && dayActive;

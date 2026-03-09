@@ -27,13 +27,13 @@ export function assessConfidence(
   weights: SensorWeights = DEFAULT_WEIGHTS,
 ): ConfidenceAssessment {
   const activeSensors = readings.filter(
-    (r) => r.normalizedText !== null && r.confidence !== null,
+    (r) => r.normalizedText != null && r.confidence != null,
   );
 
   const activeSensorCount = activeSensors.length;
 
   // Quanti sensori concordano col testo fuso
-  const agreementCount = fusedText !== null
+  const agreementCount = fusedText != null
     ? activeSensors.filter((r) => r.normalizedText === fusedText).length
     : 0;
 

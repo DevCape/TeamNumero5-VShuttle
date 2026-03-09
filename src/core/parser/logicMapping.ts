@@ -83,14 +83,19 @@ function extractTimeConstraint(text: string): TimeConstraint | null {
   }
 
   // Pattern "HH-HH" abbreviato (es. "08-20", "22-06", "06-14")
-  match = text.match(/\b(\d{1,2})-(\d{1,2})\b/);
+  // Richiede che entrambi i numeri siano ore valide (0-24)
+  match = text.match(/\b(2[0-4]|1\d|0?\d)-(2[0-4]|1\d|0?\d)\b/);
   if (match) {
-    return {
-      startHour: parseInt(match[1]!, 10),
-      startMinute: 0,
-      endHour: parseInt(match[2]!, 10),
-      endMinute: 0,
-    };
+    const h1 = parseInt(match[1]!, 10);
+    const h2 = parseInt(match[2]!, 10);
+    if (h1 <= 24 && h2 <= 24) {
+      return {
+        startHour: h1,
+        startMinute: 0,
+        endHour: h2,
+        endMinute: 0,
+      };
+    }
   }
 
   // Pattern "0-24" (sempre attivo)
@@ -110,7 +115,7 @@ function extractTimeConstraint(text: string): TimeConstraint | null {
   }
 
   // Pattern singolo orario "DALLE 20" / "ATTIVA 20" (→ dalle 20 a fine giornata)
-  match = text.match(/(?:DALLE?|ATTIVA)\s+(\d{1,2})(?::(\d{2}))?\s*$/);
+  match = text.match(/(?:DALLE?|ATTIVA)\s+(\d{1,2})(?::(\d{2}))?(?:\s|$)/);
   if (match) {
     const start = parseTime(match[1]!, match[2]);
     return {
@@ -145,20 +150,24 @@ const GIORNO_MAP: Record<string, GiornoSettimana> = {
 
 function extractDayConstraint(text: string): DayConstraint | null {
   // "DAL LUNEDI AL VENERDI" / "LUN-VEN"
-  if (/LUN(?:EDI)?.*VEN(?:ERDI)?/i.test(text)) {
+  if (/\bLUN(?:EDI)?\s*-\s*VEN(?:ERDI)?\b/i.test(text) || /\bDAL\s+LUN(?:EDI)?.*AL\s+VEN(?:ERDI)?\b/i.test(text)) {
     return { activeDays: GIORNI_FERIALI };
   }
 
-  // "FESTIVI" / "GIORNI FESTIVI"
-  if (/FESTIV/i.test(text)) {
+  // "FESTIVI" / "GIORNI FESTIVI" — ma NON "PREFESTIVO" / "PREFESTIVI"
+  if (/(?<![A-Z])FESTIV[IO]/i.test(text) && !/PREFESTIV/i.test(text)) {
     return { activeDays: GIORNI_FESTIVI };
   }
 
-  // Giorno singolo (es. "VENERDI" in "MERCATO RIONALE VENERDI")
+  // Giorni multipli o singoli (es. "SABATO E DOMENICA", "LUNEDI MERCOLEDI VENERDI")
+  const matchedDays: GiornoSettimana[] = [];
   for (const [key, value] of Object.entries(GIORNO_MAP)) {
-    if (text.includes(key) && !text.includes("DAL") && !text.includes("LUN-VEN")) {
-      return { activeDays: [value] };
+    if (text.includes(key)) {
+      matchedDays.push(value);
     }
+  }
+  if (matchedDays.length > 0) {
+    return { activeDays: matchedDays };
   }
 
   // "NOTTE" / "NOTTURNA" → tutti i giorni (il vincolo orario è separato)
@@ -173,7 +182,7 @@ function extractDayConstraint(text: string): DayConstraint | null {
 
 function classifySign(text: string): { category: SignCategory; signType: SignType } {
   // ── ZTL (ha priorità, anche "ZTL ATTIVA ECCETTO..." è una ZTL) ──
-  if (/^ZTL|VARCO|USCITA\s+ZTL|FINE\s+ZTL/.test(text)) {
+  if (/\bZTL\b|VARCO|USCITA\s+ZTL|FINE\s+ZTL/.test(text)) {
     return { category: "DIVIETO", signType: "ZTL" };
   }
 
@@ -182,20 +191,23 @@ function classifySign(text: string): { category: SignCategory; signType: SignTyp
     if (/AFFISSIONE|SCARICO/.test(text)) {
       return { category: "DIVIETO", signType: "NON_RILEVANTE" };
     }
+    // Priorità: i divieti bloccanti (TRANSITO, SENSO VIETATO) hanno precedenza
+    // su quelli non-bloccanti (SOSTA, FERMATA), per gestire segnali combinati
+    // come "DIVIETO DI TRANSITO E SOSTA"
+    if (/SENSO\s+VIETATO/.test(text)) {
+      return { category: "DIVIETO", signType: "SENSO_VIETATO" };
+    }
+    if (/TRANSITO/.test(text)) {
+      return { category: "DIVIETO", signType: "TRANSITO" };
+    }
+    if (/ACCESSO/.test(text)) {
+      return { category: "DIVIETO", signType: "ACCESSO" };
+    }
     if (/SOSTA/.test(text)) {
       return { category: "DIVIETO", signType: "SOSTA" };
     }
     if (/FERMATA/.test(text)) {
       return { category: "DIVIETO", signType: "FERMATA" };
-    }
-    if (/ACCESSO|ACCE/.test(text)) {
-      return { category: "DIVIETO", signType: "ACCESSO" };
-    }
-    if (/TRANSITO/.test(text)) {
-      return { category: "DIVIETO", signType: "TRANSITO" };
-    }
-    if (/SENSO\s+VIETATO/.test(text)) {
-      return { category: "DIVIETO", signType: "SENSO_VIETATO" };
     }
     // Divieto generico senza sotto-tipo → trattato come ACCESSO
     return { category: "DIVIETO", signType: "ACCESSO" };

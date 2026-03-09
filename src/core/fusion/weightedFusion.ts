@@ -31,7 +31,7 @@ export function selectBestText(
 ): TextCandidate | null {
   const validReadings = readings.filter(
     (r): r is NormalizedReading & { normalizedText: string; confidence: number } =>
-      r.normalizedText !== null && r.confidence !== null,
+      r.normalizedText != null && r.confidence != null,
   );
 
   if (validReadings.length === 0) {
@@ -86,7 +86,7 @@ export function computeWeightedConfidence(
   let totalWeight = 0;
 
   for (const reading of readings) {
-    if (reading.confidence !== null) {
+    if (reading.confidence != null) {
       const w = weights[reading.sensorId];
       totalWeighted += w * reading.confidence;
       totalWeight += w;
