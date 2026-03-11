@@ -7,9 +7,37 @@ V-SHUTTLE HMI è un **Decision Support System** progettato per navette autonome 
 Il sistema è interamente client-side: tutta la logica gira nel browser, senza backend, senza database e senza chiamate a servizi esterni o LLM.
 
 E' possibile tuttavia accedere all'applicazione al seguente link: https://team-numero5-v-shuttle.vercel.app/
+
 ---
 
-## 2. Stack Tecnologico
+## 2. Il Team
+
+| Membro | Area di responsabilità | Testing |
+|--------|----------------------|---------|
+| **Alberto Capellini** | Data Fusion Engine (`src/core/fusion/`) | Test unitari Fusion (`fusion.test.ts`) |
+| **Tommaso Ammannati** | Semantic Parser (`src/core/parser/`) | Test unitari Parser (`parser.test.ts`) |
+| **Matteo Bozzi** | Interfaccia Utente (`src/components/`, `src/hooks/`) | Test unitari UI |
+
+I test di integrazione end-to-end sono stati progettati e sviluppati in collaborazione da tutti e tre i membri del team.
+
+---
+
+## 3. Approccio e Metodologia
+
+### Analisi dei Requisiti
+
+Ci siamo avvalsi di Gemini come supporto per stilare un'analisi dei requisiti strutturata, applicando due framework complementari:
+
+- **Principio di Pareto (80/20)**: per identificare il 20% delle funzionalità in grado di coprire l'80% del valore richiesto, concentrando lo sforzo sulle aree a maggiore impatto.
+- **Metodo MoSCoW** (Must have, Should have, Could have, Won't have): per prioritizzare i requisiti in modo chiaro e condiviso.
+
+### Definizione delle Interfacce Comuni
+
+Prima di avviare lo sviluppo del backend, il team ha definito le **interfacce comuni** nel file `src/core/types.ts`. Questo passaggio è stato fondamentale: senza un contratto condiviso tra i moduli, il motore di Fusion sviluppato da Alberto non sarebbe stato compatibile con il Parser di Tommaso, né con la UI di Matteo. L'adozione di un'unica fonte di verità per i tipi ha permesso a ciascun membro di lavorare in parallelo sulla propria area, garantendo l'interoperabilità fin dall'inizio.
+
+---
+
+## 4. Stack Tecnologico
 
 | Livello | Tecnologia | Versione |
 |---------|-----------|----------|
@@ -18,10 +46,15 @@ E' possibile tuttavia accedere all'applicazione al seguente link: https://team-n
 | Build Tool | Vite | 7.3.1 |
 | CSS | Tailwind CSS (v4, plugin Vite) | 4.2.1 |
 | Test | Vitest | 4.0.18 |
+| IDE | VS Code + GitHub Copilot (Claude) | Opus 4.6 |
+| AI supporto progettazione | Google Gemini | 3 Pro |
+
+Gemini 3 Pro è stato utilizzato nelle fasi iniziali del processo software come supporto alla progettazione dell'architettura e all'analisi dei requisiti. 
+VS Code con GitHub Copilot (modello Claude Opus 4.6) è stato impiegato durante lo sviluppo per accelerare la scrittura di componenti boilerplate.
 
 ---
 
-## 3. Struttura del Progetto
+## 5. Struttura del Progetto
 
 ```
 Hackaton-Hastega-9-3-2026/
@@ -68,7 +101,7 @@ Hackaton-Hastega-9-3-2026/
 
 ---
 
-## 4. Architettura a Pipeline a 3 Stadi
+## 6. Architettura a Pipeline a 3 Stadi
 
 Il cuore del sistema segue una pipeline sequenziale rigida:
 
@@ -99,9 +132,9 @@ Dati Sensori Grezzi (JSON)
 
 ---
 
-## 5. Dati di Input
+## 7. Dati di Input
 
-### 5.1 Formato degli Scenari (`data/VShuttle-input.json`)
+### 7.1 Formato degli Scenari (`data/VShuttle-input.json`)
 
 Array JSON di 73 scenari di guida. Ogni scenario contiene:
 
@@ -117,11 +150,11 @@ Gli scenari coprono una vasta gamma di segnaletica stradale italiana (ZTL, divie
 
 ---
 
-## 6. Tipi e Costanti Condivise (`src/core/types.ts`)
+## 8. Tipi e Costanti Condivise (`src/core/types.ts`)
 
 Questo file è la **singola fonte di verità** per tutte le interfacce del sistema.
 
-### 6.1 Interfacce Principali
+### 8.1 Interfacce Principali
 
 - **`SensorReading`**: lettura grezza di un sensore (`testo`, `confidenza`)
 - **`SensorSet`**: tripletta di sensori (camera_frontale, camera_laterale, V2I_receiver)
@@ -131,14 +164,14 @@ Questo file è la **singola fonte di verità** per tutte le interfacce del siste
 - **`ParsedSign`**: segnale completamente classificato (categoria, tipo, eccezioni, vincoli temporali)
 - **`ParserResult`**: output completo del parser (segnale, decisione, motivazione)
 
-### 6.2 Tipi Enumerativi
+### 8.2 Tipi Enumerativi
 
 - **`SignCategory`**: `DIVIETO` | `OBBLIGO` | `PERICOLO` | `INFORMAZIONE`
 - **`SignType`**: 15 sottotipi specifici (TRANSITO, ACCESSO, SOSTA, ZTL, SENSO_VIETATO, AREA_PEDONALE, STRADA_CHIUSA, VELOCITA, RALLENTARE, GENERICO, ecc.)
 - **`ExceptionType`**: 10 eccezioni riconosciute (BUS, BUS_TAXI, NAVETTE_L4, VEICOLI_ELETTRICI, RESIDENTI, MEZZI_DI_SOCCORSO, FORNITORI, AUTORIZZATI, MEZZI_PESANTI, VEICOLI_A_MOTORE)
 - **`Decision`**: `PROCEDI` | `STOP` | `RALLENTA` | `INTERVENTO_UMANO`
 
-### 6.3 Costanti
+### 8.3 Costanti
 
 - **`VEHICLE_PROPERTIES`**: il veicolo è classificato come BUS, NavettaL4, elettrico e autorizzato (ma NON taxi, residente, mezzo di soccorso, fornitore o mezzo pesante)
 - **`CONFIDENCE_THRESHOLD`**: `0.60` -- sotto questa soglia scatta l'intervento umano
@@ -146,9 +179,9 @@ Questo file è la **singola fonte di verità** per tutte le interfacce del siste
 
 ---
 
-## 7. Data Fusion Engine (`src/core/fusion/`)
+## 9. Data Fusion Engine (`src/core/fusion/`)
 
-### 7.1 Pipeline di Normalizzazione OCR (`normalizer.ts`)
+### 9.1 Pipeline di Normalizzazione OCR (`normalizer.ts`)
 
 La normalizzazione del testo OCR avviene in 6 passi sequenziali:
 
@@ -159,25 +192,25 @@ La normalizzazione del testo OCR avviene in 6 passi sequenziali:
 5. **De-leetificazione** (`deleetify`): inverte la sostituzione leet-speak (`0→O`, `1→I`, `3→E`, `4→A`, `5→S`), preservando numeri puri e pattern orari (es. `D1V1ET0` diventa `DIVIETO`, ma `30` resta `30`)
 6. **Collasso spazi** (`collapseSpaces`): rimuove spazi multipli e trim
 
-### 7.2 Selezione Testo Pesata (`weightedFusion.ts`)
+### 9.2 Selezione Testo Pesata (`weightedFusion.ts`)
 
 - **`selectBestText()`**: raggruppa le letture normalizzate per testo identico, calcola lo score pesato per ogni gruppo (`peso_sensore × confidenza`), seleziona il candidato con il punteggio totale più alto
 - **`computeWeightedConfidence()`**: calcola la media pesata della confidenza su tutti i sensori attivi: `SUM(peso_i × confidenza_i) / SUM(pesi_attivi)`
 
-### 7.3 Valutazione Confidenza (`confidenceScoring.ts`)
+### 9.3 Valutazione Confidenza (`confidenceScoring.ts`)
 
 - **`assessConfidence()`**: calcola la confidenza complessiva, conta sensori attivi e sensori in accordo, determina se l'intervento umano è necessario (confidenza < 0.60 oppure nessun sensore attivo)
 
-### 7.4 Orchestratore Fusione (`index.ts`)
+### 9.4 Orchestratore Fusione (`index.ts`)
 
 - **`processScenario()`**: esegue la pipeline in 3 passi: normalizzazione → selezione testo migliore → valutazione confidenza
 - **`processAllScenarios()`**: elaborazione batch di tutti gli scenari
 
 ---
 
-## 8. Semantic Parser (`src/core/parser/`)
+## 10. Semantic Parser (`src/core/parser/`)
 
-### 8.1 Classificazione Segnaletica (`logicMapping.ts`)
+### 10.1 Classificazione Segnaletica (`logicMapping.ts`)
 
 Il file più complesso del progetto. Effettua la classificazione deterministica tramite pattern regex.
 
@@ -208,7 +241,7 @@ Il file più complesso del progetto. Effettua la classificazione deterministica 
 
 **`parseSign()`** restituisce un `ParsedSign` completo, inclusi i flag `isExplicitlyInactive` (VARCO NON ATTIVO, FINE ZTL) e `isAlwaysActive` (0-24, SEMPRE).
 
-### 8.2 Logica Esenzioni Veicolo (`vehicleAwareness.ts`)
+### 10.2 Logica Esenzioni Veicolo (`vehicleAwareness.ts`)
 
 **`isVehicleExempt()`** mappa ogni tipo di eccezione a una proprietà del veicolo:
 
@@ -224,7 +257,7 @@ Il file più complesso del progetto. Effettua la classificazione deterministica 
 | FORNITORI | No | Il veicolo non è un fornitore |
 | MEZZI_PESANTI | Si | Il veicolo NON è un mezzo pesante (quindi non soggetto al divieto) |
 
-### 8.3 Verifica Vincoli Temporali (`temporalCheck.ts`)
+### 10.3 Verifica Vincoli Temporali (`temporalCheck.ts`)
 
 **`isTemporallyActive()`** verifica se una restrizione è attiva al dato orario e giorno:
 
@@ -234,7 +267,7 @@ Il file più complesso del progetto. Effettua la classificazione deterministica 
 4. Verifica **vincoli giornalieri** (giorni della settimana, festivi)
 5. Default: **attivo** se non ci sono vincoli temporali
 
-### 8.4 Orchestratore Parser (`index.ts`)
+### 10.4 Orchestratore Parser (`index.ts`)
 
 **`parseScenario()`** esegue la pipeline completa:
 
@@ -261,14 +294,14 @@ Il file più complesso del progetto. Effettua la classificazione deterministica 
 
 ---
 
-## 9. Interfaccia Utente (React)
+## 11. Interfaccia Utente (React)
 
-### 9.1 Entry Point (`main.tsx`, `App.tsx`)
+### 11.1 Entry Point (`main.tsx`, `App.tsx`)
 
 - `main.tsx` crea il root React e renderizza `<App />` in StrictMode
 - `App.tsx` importa i dati degli scenari dal JSON, li tipizza come `Scenario[]` e li passa a `<Dashboard>`
 
-### 9.2 Hook di Simulazione (`hooks/useSimulation.ts`)
+### 11.2 Hook di Simulazione (`hooks/useSimulation.ts`)
 
 Gestisce l'intero ciclo di vita della simulazione:
 
@@ -278,7 +311,7 @@ Gestisce l'intero ciclo di vita della simulazione:
 - **Safety Fallback**: se il timer di 2 secondi scade senza intervento, la decisione viene impostata automaticamente a **STOP** (design safety-first)
 - **Controlli**: `start()`, `stop()`, `reset()`, con pulizia timer su unmount
 
-### 9.3 Componenti UI
+### 11.3 Componenti UI
 
 #### Dashboard (`Dashboard.tsx`)
 - Layout full-screen dark mode (bg-gray-900)
@@ -318,29 +351,60 @@ Supporta varianti `large` e `small`.
 
 ---
 
-## 10. Pattern Architetturali
+## 12. Preview Visiva
 
-### 10.1 Motore a Regole Deterministico
+Questa sezione offre alla giuria un percorso visivo guidato attraverso l'interfaccia del sistema. Ogni screenshot evidenzia un aspetto chiave del flusso decisionale.
+
+### 12.1 Dashboard principale — stato di attesa
+![Dashboard in attesa](media/stato_attesa.png)
+> **Cosa osservare:** il layout a schermo intero in dark mode, la barra di progresso degli scenari (ancora grigia, subito sotto la "navbar" nera), i pulsanti di controllo simulazione (Avvia / Pausa / Reset) conformi al requisito Fat Finger (44×44 px). Notare come l'interfaccia comunichi chiaramente lo stato "IN ATTESA" prima dell'avvio.
+
+### 12.2 Scenario in elaborazione — decisione automatica
+
+![Scenario con decisione automatica](media/auto-decision.png)
+> **Cosa osservare:** il layout a 3 colonne: a sinistra le letture dei singoli sensori con il testo OCR originale e quello normalizzato; al centro il testo fuso, la barra di confidenza (verde = alta affidabilità) e il badge decisionale; a destra i dettagli di classificazione del segnale (categoria, tipo, esenzioni, stato temporale). Questa vista dimostra come la pipeline Fusion → Parser → UI produca una decisione chiara e motivata.
+
+### 12.3 Intervento umano — confidenza insufficiente
+
+![Intervento umano richiesto](media/intervento-umano.png)
+![Zoom intervento umano](media/zoom-intervento-umano.png)
+> **Cosa osservare:** il pannello viola con animazione pulsante che segnala la necessità di intervento umano, la barra di countdown di 2 secondi e i tre pulsanti PROCEDI / RALLENTA / STOP. Questo è il momento critico del design safety-first: se il Safety Driver non interviene entro il timeout, il sistema esegue automaticamente uno STOP.
+
+### 12.4 Validazione end-to-end
+
+Ogni stato visibile negli screenshot è il risultato diretto della pipeline deterministica testata da **72 test unitari e di integrazione**. In particolare:
+
+- I dati mostrati nel pannello sensori sono prodotti dal **Data Fusion Engine**, coperto da 16 test unitari che verificano normalizzazione OCR, selezione pesata e valutazione di confidenza.
+- La decisione e la classificazione visualizzate al centro e a destra derivano dal **Semantic Parser**, validato da 56 test che coprono tutti i 15 tipi di segnale, le 10 eccezioni veicolo e i vincoli temporali.
+- I **24 test di integrazione end-to-end**, sviluppati collettivamente dal team, garantiscono che l'intero percorso — dal JSON grezzo alla decisione finale — sia coerente e privo di regressioni.
+
+Ciò che la giuria osserva nell'interfaccia non è una semplice visualizzazione: è l'output verificato di un motore a regole interamente coperto da test automatizzati.
+
+---
+
+## 13. Pattern Architetturali
+
+### 13.1 Motore a Regole Deterministico
 Tutta la logica decisionale è implementata con funzioni pure e pattern matching basato su regex. Non ci sono chiamate API esterne, machine learning o comportamenti non deterministici.
 
-### 10.2 Fusione Sensoriale Pesata
+### 13.2 Fusione Sensoriale Pesata
 I sensori sono pesati per affidabilità: Camera Frontale (50%), Camera Laterale (30%), V2I (20%). La fusione seleziona la variante testuale con lo score pesato più alto, gestendo le situazioni di disaccordo tra sensori.
 
-### 10.3 Human-in-the-Loop con Safety Fallback
+### 13.3 Human-in-the-Loop con Safety Fallback
 Quando la confidenza scende sotto il 60%, il sistema entra in un countdown di 2 secondi durante il quale l'operatore può sovrascrivere la decisione. Se non viene intrapresa alcuna azione, il sistema esegue automaticamente uno **STOP** (principio di sicurezza).
 
-### 10.4 Separazione delle Responsabilità
+### 13.4 Separazione delle Responsabilità
 - `src/core/` contiene tutta la logica di business (TypeScript puro, nessuna dipendenza React)
 - `src/components/` contiene solo la renderizzazione UI
 - `src/hooks/` fa da ponte tra i due livelli tramite React hooks
 - `src/core/types.ts` è la singola fonte di verità per tutte le interfacce
 
-### 10.5 Design UI Fat Finger
+### 13.5 Design UI Fat Finger
 Tutti gli elementi interattivi mantengono un target di tocco minimo di 44×44px, progettato per tablet da 12 pollici utilizzati nella cabina della navetta.
 
 ---
 
-## 11. Testing
+## 14. Testing
 
 Il progetto include **72 test unitari** suddivisi in due file:
 
@@ -362,7 +426,7 @@ Il progetto include **72 test unitari** suddivisi in due file:
 
 ---
 
-## 12. Build e Deployment
+## 15. Build e Deployment
 
 | Comando | Descrizione |
 |---------|-------------|
@@ -376,7 +440,7 @@ La directory `/dist/` è pre-committata nel repository per deployment immediato.
 
 ---
 
-## 13. Configurazione TypeScript
+## 16. Configurazione TypeScript
 
 Il progetto adotta TypeScript in **strict mode** con controlli aggiuntivi di sicurezza:
 - `noUnusedLocals`: errore per variabili locali non utilizzate
