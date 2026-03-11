@@ -428,6 +428,19 @@ Il progetto include **72 test unitari** suddivisi in due file:
 
 ## 15. Build e Deployment
 
+### Setup iniziale
+
+```bash
+# Clona il repository
+git clone https://github.com/DevCape/TeamNumero5-VShuttle.git
+cd TeamNumero5-VShuttle
+
+# Installa le dipendenze
+npm install
+```
+
+### Comandi disponibili
+
 | Comando | Descrizione |
 |---------|-------------|
 | `npm run dev` | Avvia il dev server Vite |
